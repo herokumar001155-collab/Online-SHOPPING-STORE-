@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f7f8fc">
+<title>Image Resizer — Resize & Compress Locally</title>
+<style>
+  :root{--ink:#172033;--muted:#68738a;--line:#e5e9f2;--bg:#f7f8fc;--blue:#4f63f5;--purple:#8054e8;--soft:#eef0ff;--green:#14835f;--danger:#b42318}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  button,input,select{font:inherit}
+  button{cursor:pointer}
+  button:focus-visible,input:focus-visible,select:focus-visible,.dropzone:focus-visible{outline:3px solid #a5b4fc;outline-offset:3px}
+  .topbar{background:#fff;border-bottom:1px solid var(--line)}
+  .topinner{max-width:1180px;margin:auto;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+  .brand{display:flex;align-items:center;gap:12px;font-size:19px;font-weight:800;letter-spacing:-.5px}
+  .brand-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;color:#fff;background:linear-gradient(135deg,var(--blue),var(--purple));box-shadow:0 7px 18px #4f63f52c}
+  .privacy{display:flex;align-items:center;gap:7px;color:var(--green);font-size:13px;font-weight:650;background:#eaf8f1;padding:8px 12px;border-radius:999px}
+  main{max-width:1180px;margin:0 auto;padding:38px 24px 56px}
+  .hero{text-align:center;margin-bottom:30px}
+  .eyebrow{display:inline-block;padding:5px 11px;border-radius:999px;background:#eeedff;color:#6346cb;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+  h1{font-size:clamp(30px,4vw,43px);letter-spacing:-1.6px;line-height:1.12;margin:14px 0 10px}
+  .hero p{color:var(--muted);max-width:650px;margin:0 auto}
+  .workspace{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:22px;align-items:start}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 8px 28px #19234a08;overflow:hidden}
+  .panel-head{padding:20px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .panel-head h2{margin:0;font-size:17px;letter-spacing:-.3px}
+  .panel-body{padding:22px}
+  .dropzone{border:1.5px dashed #b9c2db;border-radius:16px;padding:28px 18px;text-align:center;background:linear-gradient(180deg,#fbfbff,#f7f8ff);transition:.2s}
+  .dropzone.dragover{border-color:var(--blue);background:#eff1ff}
+  .upload-icon{width:54px;height:54px;margin:0 auto 12px;border-radius:17px;display:grid;place-items:center;background:#eceeff;color:var(--blue)}
+  .dropzone strong{display:block;font-size:16px}
+  .dropzone p{color:var(--muted);font-size:13px;margin:5px 0 16px}
+  .btn{border:0;border-radius:11px;padding:11px 15px;font-weight:750;transition:transform .15s,filter .15s}
+  .btn:hover{filter:brightness(.98);transform:translateY(-1px)}
+  .btn-primary{color:#fff;background:linear-gradient(120deg,var(--blue),var(--purple));box-shadow:0 7px 15px #6559e42b}
+  .btn-secondary{background:#f1f3f9;color:#303b52;border:1px solid var(--line)}
+  .btn-quiet{background:transparent;color:#59657a;padding:8px 10px}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  .file-meta{display:none;margin-top:16px;padding:13px;border:1px solid var(--line);border-radius:13px;gap:12px;align-items:center}
+  .file-meta.show{display:flex}
+  .file-thumb{width:54px;height:54px;border-radius:10px;object-fit:cover;background:#f0f2f8;border:1px solid var(--line)}
+  .file-details{min-width:0;flex:1}
+  .file-details strong{display:block;overflow-wrap:anywhere;font-size:13px}
+  .file-details span{display:block;color:var(--muted);font-size:12px}
+  .section-title{font-weight:800;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:#68738a;margin:24px 0 12px}
+  .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
+  .input-wrap{display:flex;align-items:center;border:1px solid #dfe4ef;border-radius:10px;background:#fff;overflow:hidden}
+  .input-wrap:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px #4f63f515}
+  .input-wrap input{width:100%;min-width:0;border:0;outline:0;padding:10px 11px;background:transparent;color:var(--ink)}
+  .input-wrap span{font-size:12px;color:var(--muted);padding:0 10px 0 0}
+  .select{width:100%;padding:10px 11px;border:1px solid #dfe4ef;border-radius:10px;background:#fff;color:var(--ink)}
+  .ratio-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:13px}
+  .toggle-label{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:650;cursor:pointer}
+  .toggle-label input{accent-color:var(--blue);width:16px;height:16px}
+  .subtle{color:var(--muted);font-size:12px}
+  .preset-grid{display:flex;flex-wrap:wrap;gap:8px}
+  .preset{border:1px solid var(--line);border-radius:9px;background:#fff;padding:7px 10px;color:#4c5870;font-size:12px;font-weight:700}
+  .preset:hover,.preset:focus-visible{border-color:#a6afff;background:#f5f5ff}
+  .range-row{display:flex;align-items:center;gap:12px}
+  input[type=range]{width:100%;accent-color:var(--blue)}
+  .quality-number{font-weight:800;color:var(--blue);min-width:42px;text-align:right}
+  .format-note{margin-top:8px;color:var(--muted);font-size:12px}
+  .actions{display:flex;gap:10px;margin-top:24px}
+  .actions .btn-primary{flex:1}
+  .preview-area{padding:20px 22px 22px}
+  .preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .preview-card{min-width:0;border:1px solid var(--line);border-radius:13px;overflow:hidden}
+  .preview-label{padding:10px 12px;font-size:12px;font-weight:800;display:flex;justify-content:space-between;gap:8px;background:#fbfcff;border-bottom:1px solid var(--line)}
+  .preview-stage{height:230px;display:grid;place-items:center;padding:12px;background-color:#fafbfe;background-image:linear-gradient(45deg,#f0f2f7 25%,transparent 25%),linear-gradient(-45deg,#f0f2f7 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#f0f2f7 75%),linear-gradient(-45deg,transparent 75%,#f0f2f7 75%);background-size:18px 18px;background-position:0 0,0 9px,9px -9px,-9px 0}
+  .preview-stage img{max-width:100%;max-height:205px;object-fit:contain;display:none}
+  .empty-preview{color:#9aa4b7;text-align:center;font-size:12px;padding:12px}
+  .empty-preview svg{display:block;margin:0 auto 8px}
+  .preview-foot{padding:10px 12px;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+  .result-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+  .stat{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff;min-width:0}
+  .stat span{display:block;color:var(--muted);font-size:11px;font-weight:700}
+  .stat strong{display:block;margin-top:4px;font-size:16px;overflow-wrap:anywhere}
+  .saved{color:var(--green)!important}
+  .status{display:none;margin-top:14px;padding:11px 13px;border-radius:10px;font-size:13px}
+  .status.show{display:block}
+  .status.info{background:#eef2ff;color:#3e4cc0}
+  .status.error{background:#fff0ef;color:var(--danger)}
+  .status.success{background:#eaf8f1;color:#116b4c}
+  .preview-actions{display:flex;gap:10px;margin-top:16px}
+  .preview-actions .btn{flex:1}
+  .fineprint{margin:20px 0 0;color:var(--muted);font-size:12px;text-align:center}
+  .spinner{display:inline-block;width:14px;height:14px;border:2px solid #ffffff77;border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:7px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media(max-width:850px){.workspace{grid-template-columns:1fr}.preview-stage{height:260px}.preview-stage img{max-height:235px}}
+  @media(max-width:520px){main{padding:25px 13px 38px}.topinner{padding:13px 15px}.brand{font-size:17px}.brand-icon{width:37px;height:37px}.privacy{font-size:11px;padding:7px 9px}.panel-head,.panel-body,.preview-area{padding:17px}.preview-grid{grid-template-columns:1fr}.preview-stage{height:240px}.preview-stage img{max-height:215px}.result-stats{grid-template-columns:1fr 1fr}.result-stats .stat:last-child{grid-column:1/-1}.actions,.preview-actions{flex-direction:column}.hero{margin-bottom:22px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topinner">
+    <div class="brand"><span class="brand-icon" aria-hidden="true">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 8h3M8 8v3M16 8h-3M16 8v3M8 16h3M8 16v-3M16 16h-3M16 16v-3"/></svg>
+    </span>Image Resizer</div>
+    <div class="privacy"><span aria-hidden="true">●</span> 100% private · Runs in your browser</div>
+  </div>
+</header>
+<main>
+  <section class="hero">
+    <span class="eyebrow">Simple · Fast · Free</span>
+    <h1>Resize images in seconds</h1>
+    <p>Change dimensions, compress file size, and export your images in the format you need. Your images never leave your device.</p>
+  </section>
+
+  <div class="workspace">
+    <section class="panel" aria-labelledby="settingsHeading">
+      <div class="panel-head"><h2 id="settingsHeading">Image settings</h2><button class="btn btn-quiet" id="clearBtn" type="button">Clear all</button></div>
+      <div class="panel-body">
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload an image by selecting a file or dragging it here">
+          <div class="upload-icon" aria-hidden="true"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m-5 5 5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div>
+          <strong>Drop your image here</strong>
+          <p>or choose a file from your device · JPG, PNG, WebP</p>
+          <button class="btn btn-primary" id="chooseBtn" type="button">Choose image</button>
+          <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" hidden>
+        </div>
+        <div class="file-meta" id="fileMeta">
+          <img class="file-thumb" id="fileThumb" alt="Uploaded image thumbnail">
+          <div class="file-details"><strong id="fileName">image.jpg</strong><span id="originalMeta">—</span></div>
+          <button class="btn btn-quiet" id="removeBtn" type="button" aria-label="Remove uploaded image">✕</button>
+        </div>
+
+        <div class="section-title">Dimensions</div>
+        <div class="field-grid">
+          <div class="field"><label for="widthInput">Width</label><div class="input-wrap"><input id="widthInput" type="number" min="1" max="12000" value="800" inputmode="numeric"><span>px</span></div></div>
+          <div class="field"><label for="heightInput">Height</label><div class="input-wrap"><input id="heightInput" type="number" min="1" max="12000" value="600" inputmode="numeric"><span>px</span></div></div>
+        </div>
+        <div class="ratio-row">
+          <label class="toggle-label"><input id="ratioLock" type="checkbox" checked> Lock aspect ratio</label>
+          <span class="subtle" id="ratioText">Upload an image to begin</span>
+        </div>
+        <div class="section-title">Quick sizes</div>
+        <div class="preset-grid" aria-label="Preset image dimensions">
+          <button class="preset" type="button" data-w="256" data-h="256">256 × 256</button>
+          <button class="preset" type="button" data-w="512" data-h="512">512 × 512</button>
+          <button class="preset" type="button" data-w="800" data-h="600">800 × 600</button>
+          <button class="preset" type="button" data-w="1280" data-h="720">1280 × 720</button>
+          <button class="preset" type="button" data-w="1920" data-h="1080">1920 × 1080</button>
+        </div>
+        <div class="section-title">Scale image</div>
+        <div class="preset-grid">
+          <button class="preset" type="button" data-scale="25">25%</button>
+          <button class="preset" type="button" data-scale="50">50%</button>
+          <button class="preset" type="button" data-scale="75">75%</button>
+          <button class="preset" type="button" data-scale="100">100%</button>
+        </div>
+        <div class="section-title">Output format</div>
+        <div class="field"><label for="formatSelect">File format</label>
+          <select class="select" id="formatSelect">
+            <option value="image/webp">WebP — smaller files</option>
+            <option value="image/jpeg">JPEG — photos</option>
+            <option value="image/png">PNG — transparency</option>
+          </select>
+          <div class="format-note" id="formatNote">WebP often offers a good balance of quality and file size.</div>
+        </div>
+        <div class="section-title">Image quality</div>
+        <div class="range-row"><input id="qualityInput" type="range" min="10" max="100" value="85" aria-label="Image quality"><span class="quality-number" id="qualityValue">85%</span></div>
+        <div class="subtle">Quality affects JPEG and WebP. PNG is lossless, so this slider does not change PNG quality.</div>
+        <div class="actions">
+          <button class="btn btn-primary" id="resizeBtn" type="button" disabled>Resize image</button>
+          <button class="btn btn-secondary" id="resetBtn" type="button" disabled>Reset</button>
+        </div>
+        <div class="status" id="status" role="status" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="previewHeading">
+      <div class="panel-head"><h2 id="previewHeading">Preview & download</h2><span class="subtle" id="previewBadge">Waiting for image</span></div>
+      <div class="preview-area">
+        <div class="preview-grid">
+          <div class="preview-card">
+            <div class="preview-label"><span>Original</span><span id="originalDim">—</span></div>
+            <div class="preview-stage"><img id="originalPreview" alt="Original image preview"><div class="empty-preview" id="originalEmpty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>Your original image appears here</div></div>
+            <div class="preview-foot" id="originalSize">File size: —</div>
+          </div>
+          <div class="preview-card">
+            <div class="preview-label"><span>Resized</span><span id="outputDim">—</span></div>
+            <div class="preview-stage"><img id="outputPreview" alt="Resized image preview"><div class="empty-preview" id="outputEmpty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16v16H4z"/><path d="M8 8h8v8H8z"/></svg>Resize to see your result</div></div>
+            <div class="preview-foot" id="outputSize">File size: —</div>
+          </div>
+        </div>
+        <div class="result-stats">
+          <div class="stat"><span>Original size</span><strong id="statOriginal">—</strong></div>
+          <div class="stat"><span>Output size</span><strong id="statOutput">—</strong></div>
+          <div class="stat"><span>File size change</span><strong id="statSaved">—</strong></div>
+        </div>
+        <div class="preview-actions">
+          <button class="btn btn-primary" id="downloadBtn" type="button" disabled>↓ Download resized image</button>
+        </div>
+        <p class="fineprint">🔒 Images are processed locally in your browser. No image data is uploaded.</p>
+      </div>
+    </section>
+  </div>
+</main>
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const MAX_DIMENSION = 12000;
+  const MAX_PIXELS = 40000000;
+  const supportedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  const els = {
+    fileInput:$('fileInput'), dropzone:$('dropzone'), chooseBtn:$('chooseBtn'), fileMeta:$('fileMeta'),
+    fileThumb:$('fileThumb'), fileName:$('fileName'), originalMeta:$('originalMeta'), removeBtn:$('removeBtn'),
+    width:$('widthInput'), height:$('heightInput'), ratioLock:$('ratioLock'), ratioText:$('ratioText'),
+    format:$('formatSelect'), formatNote:$('formatNote'), quality:$('qualityInput'), qualityValue:$('qualityValue'),
+    resize:$('resizeBtn'), reset:$('resetBtn'), clear:$('clearBtn'), download:$('downloadBtn'), status:$('status'),
+    originalPreview:$('originalPreview'), outputPreview:$('outputPreview'), originalEmpty:$('originalEmpty'), outputEmpty:$('outputEmpty'),
+    originalDim:$('originalDim'), outputDim:$('outputDim'), originalSize:$('originalSize'), outputSize:$('outputSize'),
+    statOriginal:$('statOriginal'), statOutput:$('statOutput'), statSaved:$('statSaved'), previewBadge:$('previewBadge')
+  };
+  let sourceFile = null, sourceImage = null, sourceUrl = null, thumbUrl = null, outputUrl = null, outputBlob = null;
+  let originalWidth = 0, originalHeight = 0, lastEdited = 'width', processing = false;
+
+  function formatBytes(bytes) {
+    if (!Number.isFinite(bytes) || bytes < 0) return '—';
+    if (bytes < 1024) return bytes + ' B';
+    const units = ['KB','MB','GB']; let size = bytes / 1024, i = 0;
+    while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
+    return size.toFixed(size >= 100 ? 0 : size >= 10 ? 1 : 2) + ' ' + units[i];
+  }
+  function showStatus(message, type='info') {
+    els.status.textContent = message;
+    els.status.className = 'status show ' + type;
+  }
+  function hideStatus() { els.status.className = 'status'; els.status.textContent = ''; }
+  function revoke(url) { if (url) URL.revokeObjectURL(url); }
+  function clearOutput() {
+    revoke(outputUrl); outputUrl = null; outputBlob = null;
+    els.outputPreview.removeAttribute('src'); els.outputPreview.style.display = 'none'; els.outputEmpty.style.display = 'block';
+    els.outputDim.textContent = '—'; els.outputSize.textContent = 'File size: —';
+    els.statOutput.textContent = '—'; els.statSaved.textContent = '—'; els.statSaved.className = '';
+    els.download.disabled = true;
+  }
+  function updateQualityLabel() { els.qualityValue.textContent = els.quality.value + '%'; }
+  function updateFormatNote() {
+    const type = els.format.value;
+    els.formatNote.textContent = type === 'image/jpeg'
+      ? 'JPEG does not support transparency. Transparent areas will be filled with white.'
+      : type === 'image/png'
+      ? 'PNG preserves transparency. The quality slider does not affect PNG compression.'
+      : 'WebP often offers a good balance of quality and file size.';
+  }
+  function setDimensions(w, h, edited) {
+    if (!sourceImage) return;
+    if (els.ratioLock.checked && edited === 'width') h = Math.max(1, Math.round(w * originalHeight / originalWidth));
+    if (els.ratioLock.checked && edited === 'height') w = Math.max(1, Math.round(h * originalWidth / originalHeight));
+    els.width.value = w; els.height.value = h;
+    lastEdited = edited || lastEdited;
+  }
+  function validateDimensions() {
+    const w = Number(els.width.value), h = Number(els.height.value);
+    if (!Number.isInteger(w) || !Number.isInteger(h) || w < 1 || h < 1) return 'Enter a width and height of at least 1 pixel.';
+    if (w > MAX_DIMENSION || h > MAX_DIMENSION) return `Each dimension must be ${MAX_DIMENSION.toLocaleString()} pixels or less.`;
+    if (w * h > MAX_PIXELS) return `The output is too large. Keep the total pixel count under ${MAX_PIXELS.toLocaleString()} pixels.`;
+    return '';
+  }
+  function setPreview(imgEl, emptyEl, url) {
+    imgEl.onload = () => { imgEl.style.display = 'block'; emptyEl.style.display = 'none'; };
+    imgEl.onerror = () => { imgEl.style.display = 'none'; emptyEl.style.display = 'block'; };
+    imgEl.src = url;
+  }
+  async function loadFile(file) {
+    hideStatus();
+    if (!file) return;
+    if (!supportedTypes.includes(file.type) && !/\.(jpe?g|png|webp)$/i.test(file.name)) {
+      showStatus('Unsupported file. Please choose a JPG, PNG, or WebP image.', 'error'); return;
+    }
+    if (file.size > 100 * 1024 * 1024) {
+      showStatus('This file is larger than 100 MB. Please choose a smaller image.', 'error'); return;
+    }
+    const tempUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      if (!img.naturalWidth || !img.naturalHeight) { revoke(tempUrl); showStatus('This image could not be read. Try another file.', 'error'); return; }
+      clearCurrent(false);
+      sourceFile = file; sourceImage = img; sourceUrl = tempUrl;
+      originalWidth = img.naturalWidth; originalHeight = img.naturalHeight;
+      thumbUrl = URL.createObjectURL(file);
+      els.fileThumb.src = thumbUrl;
+      els.fileName.textContent = file.name;
+      els.originalMeta.textContent = `${originalWidth.toLocaleString()} × ${originalHeight.toLocaleString()} px · ${formatBytes(file.size)} · ${file.type.replace('image/','').toUpperCase()}`;
+      els.fileMeta.classList.add('show');
+      setPreview(els.originalPreview, els.originalEmpty, sourceUrl);
+      els.originalDim.textContent = `${originalWidth} × ${originalHeight}`;
+      els.originalSize.textContent = `File size: ${formatBytes(file.size)}`;
+      els.statOriginal.textContent = formatBytes(file.size);
+      els.width.value = originalWidth; els.height.value = originalHeight;
+      els.ratioLock.checked = true;
+      els.ratioText.textContent = `Ratio ${simplifyRatio(originalWidth, originalHeight)}`;
+      els.resize.disabled = false; els.reset.disabled = false;
+      els.previewBadge.textContent = 'Image loaded';
+      showStatus('Image loaded. Choose dimensions and select Resize image.', 'success');
+      clearOutput();
+    };
+    img.onerror = () => { revoke(tempUrl); showStatus('Could not open this image. Please try another file.', 'error'); };
+    img.src = tempUrl;
+  }
+  function gcd(a,b) { while (b) [a,b] = [b,a%b]; return a; }
+  function simplifyRatio(w,h) { const d = gcd(w,h); return `${w/d}:${h/d}`; }
+  function clearCurrent(resetStatus=true) {
+    revoke(sourceUrl); revoke(thumbUrl); sourceUrl = null; thumbUrl = null;
+    sourceFile = null; sourceImage = null; originalWidth = 0; originalHeight = 0;
+    clearOutput();
+    els.fileInput.value = ''; els.fileMeta.classList.remove('show');
+    els.fileThumb.removeAttribute('src');
+    els.originalPreview.removeAttribute('src'); els.originalPreview.style.display = 'none'; els.originalEmpty.style.display = 'block';
+    els.originalDim.textContent = '—'; els.originalSize.textContent = 'File size: —'; els.statOriginal.textContent = '—';
+    els.width.value = 800; els.height.value = 600; els.ratioText.textContent = 'Upload an image to begin';
+    els.resize.disabled = true; els.reset.disabled = true; els.previewBadge.textContent = 'Waiting for image';
+    if (resetStatus) hideStatus();
+  }
+  function resetSettings() {
+    if (!sourceImage) return;
+    els.width.value = originalWidth; els.height.value = originalHeight;
+    els.ratioLock.checked = true; els.format.value = 'image/webp'; els.quality.value = 85;
+    updateQualityLabel(); updateFormatNote(); els.ratioText.textContent = `Ratio ${simplifyRatio(originalWidth, originalHeight)}`;
+    clearOutput(); hideStatus();
+  }
+  function canvasBlob(canvas, type, quality) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(blob => {
+        if (!blob) { reject(new Error('Your browser could not create this output format. Try another format.')); return; }
+        if (blob.type !== type && type !== 'image/png') {
+          reject(new Error(`${type.replace('image/','').toUpperCase()} export is not supported by this browser. Try JPEG or PNG.`)); return;
+        }
+        resolve(blob);
+      }, type, quality);
+    });
+  }
+  async function resizeImage() {
+    if (!sourceImage || processing) return;
+    const validation = validateDimensions();
+    if (validation) { showStatus(validation, 'error'); return; }
+    const w = Number(els.width.value), h = Number(els.height.value);
+    const type = els.format.value, quality = Number(els.quality.value) / 100;
+    processing = true; els.resize.disabled = true; els.resize.innerHTML = '<span class="spinner"></span>Processing…'; hideStatus();
+    try {
+      // Yield once so the processing status can paint before canvas work begins.
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d', { alpha: type !== 'image/jpeg' });
+      if (!ctx) throw new Error('Canvas is not available in this browser.');
+      if (type === 'image/jpeg') { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h); }
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(sourceImage, 0, 0, w, h);
+      const blob = await canvasBlob(canvas, type, quality);
+      const nextUrl = URL.createObjectURL(blob);
+      revoke(outputUrl); outputUrl = nextUrl; outputBlob = blob;
+      setPreview(els.outputPreview, els.outputEmpty, outputUrl);
+      els.outputDim.textContent = `${w} × ${h}`;
+      els.outputSize.textContent = `File size: ${formatBytes(blob.size)}`;
+      els.statOutput.textContent = formatBytes(blob.size);
+      const diff = sourceFile.size - blob.size;
+      const percent = sourceFile.size ? Math.round(Math.abs(diff) / sourceFile.size * 100) : 0;
+      if (diff > 0) { els.statSaved.textContent = `${percent}% smaller`; els.statSaved.className = 'saved'; }
+      else if (diff < 0) { els.statSaved.textContent = `${percent}% larger`; els.statSaved.className = ''; }
+      else { els.statSaved.textContent = 'Same size'; els.statSaved.className = ''; }
+      els.download.disabled = false; els.previewBadge.textContent = 'Ready to download';
+      showStatus(`Done! Your ${w.toLocaleString()} × ${h.toLocaleString()} image is ready.`, 'success');
+    } catch (err) {
+      showStatus(err && err.message ? err.message : 'Something went wrong while resizing. Please try again.', 'error');
+    } finally {
+      processing = false; els.resize.disabled = !sourceImage; els.resize.textContent = 'Resize image';
+    }
+  }
+  function downloadImage() {
+    if (!outputBlob || !outputUrl) return;
+    const extension = els.format.value === 'image/jpeg' ? 'jpg' : els.format.value === 'image/png' ? 'png' : 'webp';
+    const filename = `resized-image-${els.width.value}x${els.height.value}.${extension}`;
+    const a = document.createElement('a'); a.href = outputUrl; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  els.chooseBtn.addEventListener('click', e => { e.stopPropagation(); els.fileInput.click(); });
+  els.dropzone.addEventListener('click', e => { if (e.target !== els.chooseBtn) els.fileInput.click(); });
+  els.dropzone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); els.fileInput.click(); } });
+  els.fileInput.addEventListener('change', e => loadFile(e.target.files[0]));
+  ['dragenter','dragover'].forEach(name => els.dropzone.addEventListener(name, e => { e.preventDefault(); els.dropzone.classList.add('dragover'); }));
+  ['dragleave','drop'].forEach(name => els.dropzone.addEventListener(name, e => { e.preventDefault(); els.dropzone.classList.remove('dragover'); }));
+  els.dropzone.addEventListener('drop', e => { const file = e.dataTransfer && e.dataTransfer.files[0]; if (file) loadFile(file); });
+  els.removeBtn.addEventListener('click', () => clearCurrent());
+  els.clear.addEventListener('click', () => clearCurrent());
+  els.reset.addEventListener('click', resetSettings);
+  els.resize.addEventListener('click', resizeImage);
+  els.download.addEventListener('click', downloadImage);
+  els.quality.addEventListener('input', updateQualityLabel);
+  els.format.addEventListener('change', updateFormatNote);
+  els.width.addEventListener('input', () => {
+    lastEdited = 'width';
+    if (sourceImage && els.ratioLock.checked && Number(els.width.value) > 0) setDimensions(Number(els.width.value), 0, 'width');
+  });
+  els.height.addEventListener('input', () => {
+    lastEdited = 'height';
+    if (sourceImage && els.ratioLock.checked && Number(els.height.value) > 0) setDimensions(0, Number(els.height.value), 'height');
+  });
+  els.ratioLock.addEventListener('change', () => {
+    if (sourceImage && els.ratioLock.checked) setDimensions(Number(els.width.value) || originalWidth, Number(els.height.value) || originalHeight, lastEdited);
+  });
+  document.querySelectorAll('[data-w]').forEach(btn => btn.addEventListener('click', () => {
+    const w = Number(btn.dataset.w), h = Number(btn.dataset.h);
+    if (!sourceImage) { els.width.value = w; els.height.value = h; showStatus('Upload an image first. The preset is ready to use.', 'info'); return; }
+    if (els.ratioLock.checked) {
+      // Presets set the width and preserve the source ratio while locked.
+      setDimensions(w, h, 'width');
+    } else { els.width.value = w; els.height.value = h; }
+    hideStatus();
+  }));
+  document.querySelectorAll('[data-scale]').forEach(btn => btn.addEventListener('click', () => {
+    const scale = Number(btn.dataset.scale) / 100;
+    if (!sourceImage) { showStatus('Upload an image first to use percentage scaling.', 'info'); return; }
+    els.width.value = Math.max(1, Math.round(originalWidth * scale));
+    els.height.value = Math.max(1, Math.round(originalHeight * scale));
+    hideStatus();
+  }));
+  window.addEventListener('beforeunload', () => { revoke(sourceUrl); revoke(thumbUrl); revoke(outputUrl); });
+  updateQualityLabel(); updateFormatNote();
+})();
+</script>
+</body>
+</html>
